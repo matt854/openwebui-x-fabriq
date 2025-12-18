@@ -1,0 +1,53 @@
+# --- OIDC Core Settings ---
+
+# Enable OAuth signup if you want users to be able to create accounts via Okta
+
+ENABLE_OAUTH_SIGNUP="true"
+
+# Your Okta application's Client ID
+OAUTH_CLIENT_ID="0oaxgjd6smKViHWdb697"
+
+# Your Okta application's Client Secret
+OAUTH_CLIENT_SECRET="CxyWvTimEd9KG-WTHGy2GwzQgwfDI4a8M7qvO4IxZbBf727q0nS1HZglb6EHUxm-"
+
+# Your Okta organization's OIDC discovery URL
+
+# Format: https://<your-okta-domain>/.well-known/openid-configuration
+
+# Or for a specific authorization server: https://<your-okta-domain>/oauth2/<auth-server-id>/.well-known/openid-configuration
+OPENID_PROVIDER_URL="https://integrator-3617642.okta.com/oauth2/default/.well-known/openid-configuration"
+
+# Name displayed on the login button (e.g., "Login with Okta")
+OAUTH_PROVIDER_NAME="Okta"
+
+OPENID_REDIRECT_URI="http://localhost:8080/oauth/oidc/login/callback"
+
+# Scopes to request (default is usually sufficient)
+
+# OAUTH_SCOPES="openid email profile groups" # Ensure 'groups' is included if not default
+
+# --- OAuth Group Management (Optional) ---
+
+# Set to "true" only if you configured the Groups Claim in Okta (Step 2)
+
+# and want Open WebUI groups to be managed based on Okta groups upon login.
+
+# This syncs existing groups. Users will be added/removed from Open WebUI groups
+
+# to match their Okta group claims.
+
+# ENABLE_OAUTH_GROUP_MANAGEMENT="true"
+
+# Required only if ENABLE_OAUTH_GROUP_MANAGEMENT is true.
+
+# The claim name in the ID token containing group information (must match Okta config)
+
+# OAUTH_GROUP_CLAIM="groups"
+
+# Optional: Enable Just-in-Time (JIT) creation of groups if they exist in Okta claims but not in Open WebUI.
+
+# Requires ENABLE_OAUTH_GROUP_MANAGEMENT="true".
+
+# If set to false (default), only existing groups will be synced.
+
+# ENABLE_OAUTH_GROUP_CREATION="false"

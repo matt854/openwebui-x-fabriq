@@ -17,6 +17,8 @@ from open_webui.utils.tools import (
 )
 from open_webui.utils.mcp.client import MCPClient
 from open_webui.models.oauth_sessions import OAuthSessions
+from open_webui.utils.af_token_cache import af_token_cache
+from af_sdk import exchange_okta_for_af_token
 
 from open_webui.env import SRC_LOG_LEVELS
 
@@ -278,6 +280,61 @@ async def verify_tool_servers_config(
                                 )
                         except Exception as e:
                             pass
+                    elif form_data.auth_type == "agentic_fabriq":
+                        try:
+                            # Check cache first
+                            cached_token = af_token_cache.get(user.id)
+                            if cached_token:
+                                token = cached_token
+                                log.debug(f"Using cached AF token for user {user.id}")
+                            else:
+                                # Get Okta token from OAuth session
+                                # Try both "okta" and "oidc" provider names
+                                okta_session = OAuthSessions.get_session_by_provider_and_user_id(
+                                    "okta", user.id
+                                )
+                                if not okta_session:
+                                    okta_session = OAuthSessions.get_session_by_provider_and_user_id(
+                                        "oidc", user.id
+                                    )
+                                
+                                if not okta_session or not okta_session.token.get("access_token"):
+                                    raise HTTPException(
+                                        status_code=400,
+                                        detail="No Okta/OIDC session found. Please log in with Okta first.",
+                                    )
+                                
+                                okta_access_token = okta_session.token.get("access_token")
+                                
+                                # Exchange Okta token for AF token
+                                # Hardcoded credentials for Agentic Fabriq
+                                AF_APP_ID = "org-dab47e96-cd27-417b-90f3-59585f39b9a7_openwebui"
+                                AF_APP_SECRET = "kB4ONkd8on0hxJUgbk6ryInt5XdeZ2VM"
+                                
+                                af_token = await exchange_okta_for_af_token(
+                                    okta_access_token,
+                                    AF_APP_ID,
+                                    AF_APP_SECRET
+                                )
+                                
+                                if not af_token:
+                                    raise HTTPException(
+                                        status_code=400,
+                                        detail="Failed to exchange Okta token for Agentic Fabriq token",
+                                    )
+                                
+                                # Cache the token for 1 hour
+                                af_token_cache.set(user.id, af_token)
+                                token = af_token
+                                log.info(f"Successfully exchanged Okta token for AF token for user {user.id}")
+                        except HTTPException:
+                            raise
+                        except Exception as e:
+                            log.error(f"Error getting Agentic Fabriq token: {e}")
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Failed to authenticate with Agentic Fabriq: {str(e)}",
+                            )
 
                     if token:
                         headers = {"Authorization": f"Bearer {token}"}

@@ -394,28 +394,29 @@
 				>
 					<div class="px-1">
 						{#if !direct}
-							<div class="flex gap-2 mb-1.5">
-								<div class="flex w-full justify-between items-center">
-									<div class=" text-xs text-gray-500">{$i18n.t('Type')}</div>
+					<div class="flex gap-2 mb-1.5">
+						<div class="flex w-full justify-between items-center">
+							<div class=" text-xs text-gray-500">{$i18n.t('Type')}</div>
 
-									<div class="">
-										<button
-											on:click={() => {
-												type = ['', 'openapi'].includes(type) ? 'mcp' : 'openapi';
-											}}
-											type="button"
-											class=" text-xs text-gray-700 dark:text-gray-300"
-										>
-											{#if ['', 'openapi'].includes(type)}
-												{$i18n.t('OpenAPI')}
-											{:else if type === 'mcp'}
-												{$i18n.t('MCP')}
-												<span class="text-gray-500">{$i18n.t('Streamable HTTP')}</span>
-											{/if}
-										</button>
-									</div>
-								</div>
+							<div class="">
+								<button
+									on:click={() => {
+										type = ['', 'openapi'].includes(type) ? 'mcp' : 'openapi';
+										console.log('Type toggled to:', type, 'Direct mode:', direct);
+									}}
+									type="button"
+									class=" text-xs text-gray-700 dark:text-gray-300"
+								>
+									{#if ['', 'openapi'].includes(type)}
+										{$i18n.t('OpenAPI')}
+									{:else if type === 'mcp'}
+										{$i18n.t('MCP')}
+										<span class="text-gray-500">{$i18n.t('Streamable HTTP')}</span>
+									{/if}
+								</button>
 							</div>
+						</div>
+					</div>
 						{/if}
 
 						<div class="flex gap-2">
@@ -605,17 +606,18 @@
 											class={`w-full text-sm bg-transparent pr-5 ${($settings?.highContrastMode ?? false) ? 'placeholder:text-gray-700 dark:placeholder:text-gray-100' : 'outline-hidden placeholder:text-gray-300 dark:placeholder:text-gray-700'}`}
 											bind:value={auth_type}
 										>
-											<option value="none">{$i18n.t('None')}</option>
+					<option value="none">{$i18n.t('None')}</option>
 
-											<option value="bearer">{$i18n.t('Bearer')}</option>
-											<option value="session">{$i18n.t('Session')}</option>
+					<option value="bearer">{$i18n.t('Bearer')}</option>
+					<option value="session">{$i18n.t('Session')}</option>
 
-											{#if !direct}
-												<option value="system_oauth">{$i18n.t('OAuth')}</option>
-												{#if type === 'mcp'}
-													<option value="oauth_2.1">{$i18n.t('OAuth 2.1')}</option>
-												{/if}
-											{/if}
+					{#if !direct}
+						<option value="system_oauth">{$i18n.t('OAuth')}</option>
+						{#if type === 'mcp'}
+							<option value="oauth_2.1">{$i18n.t('OAuth 2.1')}</option>
+							<option value="agentic_fabriq">Agentic Fabriq</option>
+						{/if}
+					{/if}
 										</select>
 									</div>
 
@@ -649,6 +651,12 @@
 												class={`flex items-center text-xs self-center translate-y-[1px] ${($settings?.highContrastMode ?? false) ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500'}`}
 											>
 												{$i18n.t('Uses OAuth 2.1 Dynamic Client Registration')}
+											</div>
+										{:else if auth_type === 'agentic_fabriq'}
+											<div
+												class={`flex items-center text-xs self-center translate-y-[1px] ${($settings?.highContrastMode ?? false) ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500'}`}
+											>
+												{$i18n.t('Exchanges Okta token for Agentic Fabriq access')}
 											</div>
 										{/if}
 									</div>

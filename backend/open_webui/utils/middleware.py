@@ -28,6 +28,8 @@ from open_webui.models.oauth_sessions import OAuthSessions
 from open_webui.models.chats import Chats
 from open_webui.models.folders import Folders
 from open_webui.models.users import Users
+from open_webui.utils.af_token_cache import af_token_cache
+from af_sdk import exchange_okta_for_af_token
 from open_webui.socket.main import (
     get_event_call,
     get_event_emitter,
@@ -1358,6 +1360,61 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                         except Exception as e:
                             log.error(f"Error getting OAuth token: {e}")
                             oauth_token = None
+                    elif auth_type == "agentic_fabriq":
+                        try:
+                            # Check cache first
+                            cached_token = af_token_cache.get(user.id)
+                            if cached_token:
+                                headers["Authorization"] = f"Bearer {cached_token}"
+                                log.debug(f"Using cached AF token for user {user.id}")
+                            else:
+                                # Get Okta token from OAuth session
+                                # Try both "okta" and "oidc" provider names
+                                okta_session = OAuthSessions.get_session_by_provider_and_user_id(
+                                    "okta", user.id
+                                )
+                                if not okta_session:
+                                    okta_session = OAuthSessions.get_session_by_provider_and_user_id(
+                                        "oidc", user.id
+                                    )
+                                
+                                if okta_session and okta_session.token.get("access_token"):
+                                    okta_access_token = okta_session.token.get("access_token")
+                                    
+                                    # Log the Okta access token for debugging
+                                    log.info(f"=== OKTA ACCESS TOKEN ===")
+                                    log.info(f"Full Token: {okta_access_token}")
+                                    log.info(f"Token Length: {len(okta_access_token)}")
+                                    log.info(f"========================")
+                                    
+                                    # Exchange Okta token for AF token
+                                    # Hardcoded credentials for Agentic Fabriq
+                                    AF_APP_ID = "org-dab47e96-cd27-417b-90f3-59585f39b9a7_openwebui"
+                                    AF_APP_SECRET = "kB4ONkd8on0hxJUgbk6ryInt5XdeZ2VM"
+                                    
+                                    af_token = await exchange_okta_for_af_token(
+                                        okta_access_token,
+                                        AF_APP_ID,
+                                        AF_APP_SECRET
+                                    )
+                                    
+                                    # Log the token details for debugging
+                                    log.info(f"=== AF TOKEN RESULT ===")
+                                    log.info(f"Type: {type(af_token)}, Value: {af_token}")
+                                    log.info(f"======================")
+
+                                    
+                                    if af_token:
+                                        # Cache the token for 1 hour
+                                        af_token_cache.set(user.id, af_token)
+                                        headers["Authorization"] = f"Bearer {af_token}"
+                                        log.info(f"Successfully exchanged Okta token for AF token for user {user.id}")
+                                    else:
+                                        log.error(f"Failed to exchange Okta token for AF token for user {user.id}")
+                                else:
+                                    log.error(f"No Okta/OIDC session found for user {user.id}")
+                        except Exception as e:
+                            log.error(f"Error getting Agentic Fabriq token: {e}")
 
                     mcp_clients[server_id] = MCPClient()
                     await mcp_clients[server_id].connect(
