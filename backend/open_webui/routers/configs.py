@@ -17,8 +17,8 @@ from open_webui.utils.tools import (
 )
 from open_webui.utils.mcp.client import MCPClient
 from open_webui.models.oauth_sessions import OAuthSessions
-from open_webui.utils.af_token_cache import af_token_cache
-from af_sdk import exchange_okta_for_af_token
+from open_webui.utils.af_token_cache import af_token_cache, exchange_okta_token_for_af_token
+# exchange_okta_for_af_token is now imported via af_token_cache
 
 from open_webui.env import SRC_LOG_LEVELS
 
@@ -307,15 +307,7 @@ async def verify_tool_servers_config(
                                 okta_access_token = okta_session.token.get("access_token")
                                 
                                 # Exchange Okta token for AF token
-                                # Hardcoded credentials for Agentic Fabriq
-                                AF_APP_ID = "org-dab47e96-cd27-417b-90f3-59585f39b9a7_openwebui"
-                                AF_APP_SECRET = "kB4ONkd8on0hxJUgbk6ryInt5XdeZ2VM"
-                                
-                                af_token = await exchange_okta_for_af_token(
-                                    okta_access_token,
-                                    AF_APP_ID,
-                                    AF_APP_SECRET
-                                )
+                                af_token = await exchange_okta_token_for_af_token(okta_access_token)
                                 
                                 if not af_token:
                                     raise HTTPException(

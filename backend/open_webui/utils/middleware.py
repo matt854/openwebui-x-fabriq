@@ -28,8 +28,8 @@ from open_webui.models.oauth_sessions import OAuthSessions
 from open_webui.models.chats import Chats
 from open_webui.models.folders import Folders
 from open_webui.models.users import Users
-from open_webui.utils.af_token_cache import af_token_cache
-from af_sdk import exchange_okta_for_af_token
+from open_webui.utils.af_token_cache import af_token_cache, exchange_okta_token_for_af_token
+# exchange_okta_for_af_token is now imported via af_token_cache
 from open_webui.socket.main import (
     get_event_call,
     get_event_emitter,
@@ -1295,8 +1295,10 @@ async def process_chat_payload(request, form_data, user, metadata, model):
     # Client side tools
     direct_tool_servers = metadata.get("tool_servers", None)
 
-    log.debug(f"{tool_ids=}")
-    log.debug(f"{direct_tool_servers=}")
+    log.info(f"=== TOOL LOADING DEBUG ===")
+    log.info(f"tool_ids from metadata: {tool_ids}")
+    log.info(f"direct_tool_servers: {direct_tool_servers}")
+    log.info(f"=========================")
 
     tools_dict = {}
 
@@ -1379,24 +1381,19 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                                     )
                                 
                                 if okta_session and okta_session.token.get("access_token"):
+                                    # Use access_token for token exchange
                                     okta_access_token = okta_session.token.get("access_token")
                                     
-                                    # Log the Okta access token for debugging
-                                    log.info(f"=== OKTA ACCESS TOKEN ===")
+                                    # Log the Okta token for debugging
+                                    log.info(f"=== OKTA TOKEN DEBUG ===")
+                                    log.info(f"Using token type: access_token")
                                     log.info(f"Full Token: {okta_access_token}")
                                     log.info(f"Token Length: {len(okta_access_token)}")
+                                    log.info(f"Available keys in session: {list(okta_session.token.keys())}")
                                     log.info(f"========================")
                                     
                                     # Exchange Okta token for AF token
-                                    # Hardcoded credentials for Agentic Fabriq
-                                    AF_APP_ID = "org-dab47e96-cd27-417b-90f3-59585f39b9a7_openwebui"
-                                    AF_APP_SECRET = "kB4ONkd8on0hxJUgbk6ryInt5XdeZ2VM"
-                                    
-                                    af_token = await exchange_okta_for_af_token(
-                                        okta_access_token,
-                                        AF_APP_ID,
-                                        AF_APP_SECRET
-                                    )
+                                    af_token = await exchange_okta_token_for_af_token(okta_access_token)
                                     
                                     # Log the token details for debugging
                                     log.info(f"=== AF TOKEN RESULT ===")
@@ -1415,6 +1412,9 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                                     log.error(f"No Okta/OIDC session found for user {user.id}")
                         except Exception as e:
                             log.error(f"Error getting Agentic Fabriq token: {e}")
+                            log.error(f"Exception type: {type(e).__name__}")
+                            import traceback
+                            log.error(f"Full traceback: {traceback.format_exc()}")
 
                     mcp_clients[server_id] = MCPClient()
                     await mcp_clients[server_id].connect(
@@ -1476,6 +1476,9 @@ async def process_chat_payload(request, form_data, user, metadata, model):
         )
         if mcp_tools_dict:
             tools_dict = {**tools_dict, **mcp_tools_dict}
+            log.info(f"=== MCP TOOLS LOADED: {list(mcp_tools_dict.keys())} ===")
+        else:
+            log.warning("=== NO MCP TOOLS LOADED (mcp_tools_dict is empty) ===")
 
     if direct_tool_servers:
         for tool_server in direct_tool_servers:
@@ -1490,6 +1493,8 @@ async def process_chat_payload(request, form_data, user, metadata, model):
 
     if mcp_clients:
         metadata["mcp_clients"] = mcp_clients
+
+    log.info(f"=== TOTAL TOOLS AVAILABLE: {list(tools_dict.keys()) if tools_dict else 'None'} ===")
 
     if tools_dict:
         if metadata.get("params", {}).get("function_calling") == "native":
@@ -2472,6 +2477,15 @@ async def process_chat_response(
                             delta_count = 0
                             last_delta_data = None
 
+                    # Handle case where response is JSONResponse instead of StreamingResponse
+                    if not hasattr(response, "body_iterator"):
+                        if isinstance(response, JSONResponse):
+                            log.error(f"Received JSONResponse instead of StreamingResponse: {response.body}")
+                            return
+                        else:
+                            log.error(f"Response has no body_iterator: {type(response)}")
+                            return
+
                     async for line in response.body_iterator:
                         line = (
                             line.decode("utf-8", "replace")
@@ -3254,6 +3268,13 @@ async def process_chat_response(
 
                 if data:
                     yield data
+
+        # Handle case where response is not a StreamingResponse
+        if not hasattr(response, "body_iterator"):
+            log.error(f"Response has no body_iterator in stream_wrapper: {type(response)}")
+            if isinstance(response, JSONResponse):
+                return response
+            return response
 
         return StreamingResponse(
             stream_wrapper(response.body_iterator, events),

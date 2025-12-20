@@ -4,18 +4,21 @@
 
 ENABLE_OAUTH_SIGNUP="true"
 
+# Allow SSO login to link with existing accounts that have the same email
+OAUTH_MERGE_ACCOUNTS_BY_EMAIL="true"
+
 # Your Okta application's Client ID
-OAUTH_CLIENT_ID="0oaxgjd6smKViHWdb697"
+OAUTH_CLIENT_ID="0oay7rks65yi7Ommx697"
 
 # Your Okta application's Client Secret
-OAUTH_CLIENT_SECRET="CxyWvTimEd9KG-WTHGy2GwzQgwfDI4a8M7qvO4IxZbBf727q0nS1HZglb6EHUxm-"
+OAUTH_CLIENT_SECRET="7PhaHQml53KjtSa-PhcqC6pMEMWMbNcFV4Yieve-zQyi0H_3TzbNu-xdOnkKl9Cm"
 
 # Your Okta organization's OIDC discovery URL
 
 # Format: https://<your-okta-domain>/.well-known/openid-configuration
 
 # Or for a specific authorization server: https://<your-okta-domain>/oauth2/<auth-server-id>/.well-known/openid-configuration
-OPENID_PROVIDER_URL="https://integrator-3617642.okta.com/oauth2/default/.well-known/openid-configuration"
+OPENID_PROVIDER_URL="https://trial-3446177.okta.com/oauth2/default/.well-known/openid-configuration"
 
 # Name displayed on the login button (e.g., "Login with Okta")
 OAUTH_PROVIDER_NAME="Okta"

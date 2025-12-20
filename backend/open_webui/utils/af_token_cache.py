@@ -10,6 +10,31 @@ from threading import Lock
 
 log = logging.getLogger(__name__)
 
+# ===========================================
+# Agentic Fabriq credentials - EDIT HERE
+# ===========================================
+AF_APP_ID = "org-f4c7eab7-4439-494a-8ddd-06abb3974541_openwebui-test"
+AF_APP_SECRET = "kI6ZIJGK3zZmHvL5KCUxwgJGQnuYcVhq"
+# ===========================================
+
+async def exchange_okta_token_for_af_token(okta_access_token: str) -> Optional[str]:
+    """
+    Exchange an Okta access token for an Agentic Fabriq token.
+    
+    Args:
+        okta_access_token: The Okta access token to exchange
+        
+    Returns:
+        The AF token if successful, None otherwise
+    """
+    from af_sdk import exchange_okta_for_af_token
+    
+    return await exchange_okta_for_af_token(
+        okta_access_token,
+        AF_APP_ID,
+        AF_APP_SECRET
+    )
+
 class AFTokenCache:
     """Simple in-memory cache for AF tokens with TTL."""
     
@@ -93,4 +118,5 @@ class AFTokenCache:
 
 # Global cache instance
 af_token_cache = AFTokenCache()
+
 
