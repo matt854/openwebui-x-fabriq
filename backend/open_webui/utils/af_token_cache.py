@@ -13,8 +13,8 @@ log = logging.getLogger(__name__)
 # ===========================================
 # Agentic Fabriq credentials - EDIT HERE
 # ===========================================
-AF_APP_ID = "org-f4c7eab7-4439-494a-8ddd-06abb3974541_openwebui-test"
-AF_APP_SECRET = "kI6ZIJGK3zZmHvL5KCUxwgJGQnuYcVhq"
+AF_APP_ID = "org-f4c7eab7-4439-494a-8ddd-06abb3974541_openwebui-paulina"
+AF_APP_SECRET = "FgmKwN3KZdAU7rKGBubWnhZrPaBRrCfU"
 # ===========================================
 
 async def exchange_okta_token_for_af_token(okta_access_token: str) -> Optional[str]:
@@ -32,7 +32,8 @@ async def exchange_okta_token_for_af_token(okta_access_token: str) -> Optional[s
     return await exchange_okta_for_af_token(
         okta_access_token,
         AF_APP_ID,
-        AF_APP_SECRET
+        AF_APP_SECRET,    
+        gateway_url="https://staging.agenticfabriq.com",
     )
 
 class AFTokenCache:
